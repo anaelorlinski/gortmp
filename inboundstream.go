@@ -5,7 +5,8 @@ package gortmp
 import (
 	"bytes"
 	"fmt"
-	"github.com/zhangpeihao/goamf"
+
+	amf "github.com/zhangpeihao/goamf"
 	"github.com/zhangpeihao/log"
 )
 
@@ -203,15 +204,51 @@ func (stream *inboundStream) onPlay(cmd *Command) bool {
 }
 
 func (stream *inboundStream) onPublish(cmd *Command) bool {
+
+	logger.ModulePrintf(logHandler, log.LOG_LEVEL_WARNING,
+		"inboundStream::onPublish: not implemented 1! %+v\n", cmd)
+
+	// Get stream name
+	if cmd.Objects == nil || len(cmd.Objects) < 2 || cmd.Objects[1] == nil {
+		logger.ModulePrintf(logHandler, log.LOG_LEVEL_WARNING,
+			"inboundStream::onPlay: command error 1! %+v\n", cmd)
+		return true
+	}
+
+	if streamName, ok := cmd.Objects[1].(string); !ok {
+		logger.ModulePrintf(logHandler, log.LOG_LEVEL_WARNING,
+			"inboundStream::onPlay: command error 2! %+v\n", cmd)
+		return true
+	} else {
+		stream.streamName = streamName
+	}
+	// Response
+	stream.conn.conn.SetChunkSize(4096)
+	stream.conn.conn.SendUserControlMessage(EVENT_STREAM_BEGIN)
+	stream.streamReset()
+	stream.streamStart()
+	stream.rtmpSampleAccess()
+	stream.handler.OnPublishStart(stream)
 	return true
 }
 func (stream *inboundStream) onRecevieAudio(cmd *Command) bool {
+
+	logger.ModulePrintf(logHandler, log.LOG_LEVEL_WARNING,
+		"inboundStream::onRecevieAudio: not implemented 1! %+v\n", cmd)
+
 	return true
 }
 func (stream *inboundStream) onRecevieVideo(cmd *Command) bool {
+
+	logger.ModulePrintf(logHandler, log.LOG_LEVEL_WARNING,
+		"inboundStream::onRecevieVideo: not implemented 1! %+v\n", cmd)
+
 	return true
 }
 func (stream *inboundStream) onCloseStream(cmd *Command) bool {
+	logger.ModulePrintf(logHandler, log.LOG_LEVEL_WARNING,
+		"inboundStream::onCloseStream: not implemented 1! %+v\n", cmd)
+
 	return true
 }
 

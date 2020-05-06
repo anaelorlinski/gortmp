@@ -65,6 +65,7 @@ func (chunkStream *OutboundChunkStream) NewOutboundHeader(message *Message) *Hea
 	if chunkStream.lastHeader == nil {
 		header.Fmt = HEADER_FMT_FULL
 		header.Timestamp = timestamp
+
 	} else {
 
 		if header.MessageStreamID == chunkStream.lastHeader.MessageStreamID {

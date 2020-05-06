@@ -8,10 +8,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/zhangpeihao/goamf"
-	"github.com/zhangpeihao/log"
 	"net"
 	"time"
+
+	amf "github.com/zhangpeihao/goamf"
+	"github.com/zhangpeihao/log"
 )
 
 const (
@@ -50,6 +51,8 @@ type OutboundConn interface {
 	Call(name string, customParameters ...interface{}) (err error)
 	// Get network connect instance
 	Conn() Conn
+	// release stream
+	ReleaseStream(streamName string) (err error)
 }
 
 // High-level interface
@@ -68,7 +71,7 @@ type outboundConn struct {
 }
 
 // Connect to FMS server, and finish handshake process
-func Dial(url string, handler OutboundConnHandler, maxChannelNumber int) (OutboundConn, error) {
+func Dial(url string, handler OutboundConnHandler, maxChannelNumber int, V2Handshake bool) (OutboundConn, error) {
 	rtmpURL, err := ParseURL(url)
 	if err != nil {
 		return nil, err
@@ -92,8 +95,13 @@ func Dial(url string, handler OutboundConnHandler, maxChannelNumber int) (Outbou
 	}
 	br := bufio.NewReader(c)
 	bw := bufio.NewWriter(c)
-	timeout := time.Duration(10*time.Second)
-	err = Handshake(c, br, bw, timeout)
+	timeout := time.Duration(2 * time.Second)
+	if V2Handshake {
+		err = Handshake2(c, br, bw, timeout)
+	} else {
+		err = Handshake(c, br, bw, timeout)
+	}
+
 	//err = HandshakeSample(c, br, bw, timeout)
 	if err == nil {
 		logger.ModulePrintln(logHandler, log.LOG_LEVEL_DEBUG, "Handshake OK")
@@ -115,7 +123,7 @@ func Dial(url string, handler OutboundConnHandler, maxChannelNumber int) (Outbou
 }
 
 // Connect to FMS server, and finish handshake process
-func NewOutbounConn(c net.Conn, url string, handler OutboundConnHandler, maxChannelNumber int) (OutboundConn, error) {
+func unused_NewOutbounConn(c net.Conn, url string, handler OutboundConnHandler, maxChannelNumber int) (OutboundConn, error) {
 	rtmpURL, err := ParseURL(url)
 	if err != nil {
 		return nil, err
@@ -374,6 +382,41 @@ func (obConn *outboundConn) CreateStream() (err error) {
 	}
 	message.Dump("createStream")
 	return obConn.conn.Send(message)
+}
+
+func (obConn *outboundConn) ReleaseStream(streamName string) (err error) {
+	// Create publish command
+	cmd := &Command{
+		IsFlex:        false,
+		Name:          "releaseStream",
+		TransactionID: 0,
+		Objects:       make([]interface{}, 2),
+	}
+	cmd.Objects[0] = nil
+	cmd.Objects[1] = streamName
+
+	// build buffer
+	buf := new(bytes.Buffer)
+	err = cmd.Write(buf)
+	CheckError(err, "releaseStream() Create command")
+
+	message := &Message{
+		ChunkStreamID: CS_ID_COMMAND,
+		Type:          COMMAND_AMF0,
+		Size:          uint32(buf.Len()),
+		Buf:           buf,
+	}
+	message.Dump("releaseStream")
+	return obConn.conn.Send(message)
+
+	//// Construct message
+	//message := NewMessage(stream.chunkStreamID, COMMAND_AMF0, stream.id, 0, nil)
+	//if err = cmd.Write(message.Buf); err != nil {
+	//	return
+	//}
+	//message.Dump("releaseStream")
+
+	//return conn.Send(message)
 }
 
 // Send a message

@@ -3,9 +3,10 @@ package gortmp
 
 import (
 	"bufio"
-	"github.com/zhangpeihao/log"
 	"net"
 	"time"
+
+	"github.com/zhangpeihao/log"
 )
 
 type ServerHandler interface {
@@ -86,7 +87,7 @@ func (server *Server) Handshake(c net.Conn) {
 	br := bufio.NewReader(c)
 	bw := bufio.NewWriter(c)
 	timeout := time.Duration(10) * time.Second
-	if err := SHandshake(c, br, bw, timeout); err != nil {
+	if err := SHandshake2(c, br, bw, timeout); err != nil {
 		logger.ModulePrintln(logHandler, log.LOG_LEVEL_WARNING,
 			"SHandshake error:", err)
 		c.Close()

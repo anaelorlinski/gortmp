@@ -7,13 +7,16 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/zhangpeihao/goamf"
-	"github.com/zhangpeihao/log"
 	"io"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	amf "github.com/zhangpeihao/goamf"
+	"github.com/zhangpeihao/log"
+
+	log2 "github.com/sirupsen/logrus"
 )
 
 // Conn
@@ -513,7 +516,7 @@ func (conn *conn) InboundChunkStream(id uint32) (chunkStream *InboundChunkStream
 
 func (conn *conn) CloseMediaChunkStream(id uint32) {
 	// and the id is not the index of Allocator slice
-	index := (id - 2) / 6 - 1
+	index := (id-2)/6 - 1
 	conn.mediaChunkStreamIDAllocatorLocker.Lock()
 	conn.mediaChunkStreamIDAllocator[index] = false
 	conn.mediaChunkStreamIDAllocatorLocker.Unlock()
@@ -698,6 +701,7 @@ func (conn *conn) invokeSetChunkSize(message *Message) {
 		logger.ModulePrintln(logHandler, log.LOG_LEVEL_WARNING,
 			"conn::invokeSetChunkSize err:", err)
 	}
+	log2.Infof("invokeSetChunkSize = %d", conn.inChunkSize)
 	logger.ModulePrintf(logHandler, log.LOG_LEVEL_TRACE,
 		"conn::invokeSetChunkSize() conn.inChunkSize = %d\n", conn.inChunkSize)
 }
